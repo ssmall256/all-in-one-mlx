@@ -1,0 +1,113 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "allin1-mlx"
+dynamic = ["version"]
+description = "All-In-One Music Structure Analyzer for Apple Silicon (MLX)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+keywords = ["music", "beat", "downbeat", "tracking", "structure", "analysis", "allin1", "mlx", "apple-silicon"]
+authors = [{ name = "ssmall256" }]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Operating System :: MacOS",
+  "Topic :: Multimedia :: Sound/Audio :: Analysis",
+]
+dependencies = [
+  "mlx>=0.30.6",
+  "numpy>=1.26.0",
+  "librosa>=0.11.0",
+  "hydra-core",
+  "omegaconf",
+  "huggingface_hub",
+  "matplotlib",
+  "natten-mlx>=0.3.0",
+  "demucs-mlx>=1.3.0",
+  "mlx-audio-io>=1.3.1",
+  "numba>=0.60.0",
+]
+
+[project.urls]
+Documentation = "https://github.com/ssmall256/all-in-one-mlx#readme"
+Issues = "https://github.com/ssmall256/all-in-one-mlx/issues"
+Source = "https://github.com/ssmall256/all-in-one-mlx"
+
+Upstream = "https://github.com/mir-aidj/all-in-one"
+Paper = "https://arxiv.org/abs/2307.16425"
+
+[project.scripts]
+allin1-mlx = "allin1_mlx.cli:main"
+
+[tool.hatch.version]
+path = "src/allin1_mlx/__about__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/allin1_mlx"]
+exclude = [
+  "**/*.so",
+  "**/*.c",
+  "**/*.cpp",
+  "**/*.pyx",
+  "**/*.pyx.txt",
+  "**/setup_cython.py",
+  "**/build/**",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/CHANGELOG.md",
+  "/LICENSE",
+  "/MANIFEST.in",
+  "/README.md",
+  "/pyproject.toml",
+  "/src/allin1_mlx",
+  "/tests",
+]
+exclude = [
+  "/.claude",
+  "/.python-version",
+  "/assets",
+  "/build",
+  "/claude-reports",
+  "/demix",
+  "/dist",
+  "/mlx-weights",
+  "/scripts",
+  "/separated",
+  "/sonif",
+  "/spec",
+  "/struct",
+  "/uv.lock",
+  "/viz",
+]
+
+
+[dependency-groups]
+dev = [
+  "pytest>=9.0.2",
+  "ruff",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = ["E111", "E114", "E117", "E501", "E741", "B905"]
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "single"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

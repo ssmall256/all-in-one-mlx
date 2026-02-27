@@ -1,0 +1,85 @@
+lr: 0.005
+fps: 100
+case: all
+fmax: 17000
+fmin: 30
+fold: 2
+seed: 1234
+debug: false
+depth: 11
+model: allin1
+sched: plateau
+aafold: null
+epochs: 10
+min_lr: 1.0e-07
+swa_lr: 0.15
+bpm_max: 240
+bpm_min: 55
+offline: false
+act_conv: elu
+hop_size: 441
+qkv_bias: true
+data:
+  name: harmonix
+  demixed: true
+  num_labels: 10
+  demucs_model: htdemucs
+  duration_max: 660
+  duration_min: 76
+  path_base_dir: ./data/harmonix/
+  path_metadata: ./data/harmonix/metadata.csv
+  path_track_dir: ./data/harmonix/tracks/
+  num_instruments: 4
+  path_demixed_dir: ./data/harmonix/demixed/
+  path_feature_dir: ./data/harmonix/features/
+  path_no_demixed_feature_dir: ./data/harmonix/features_no_demixed/
+dim_embed: 24
+dim_input: 81
+drop_conv: 0.2
+drop_last: 0
+drop_path: 0.1
+lookahead: false
+mlp_ratio: 4
+num_bands: 12
+num_heads: 2
+optimizer: radam
+warmup_lr: 1.0e-05
+batch_size: 1
+decay_rate: 0.3
+max_epochs: -1
+drop_hidden: 0.2
+eval_metric: val/loss
+kernel_size: 5
+sample_rate: 44100
+total_folds: 8
+window_size: 2048
+demucs_model: htdemucs
+dilation_max: 3200
+learn_rhythm: true
+sanity_check: false
+segment_size: 300
+weight_decay: 0.00025
+gradient_clip: 0.5
+warmup_epochs: 0
+drop_attention: 0.2
+layer_norm_eps: 1.0e-05
+threshold_beat: 0.19
+act_transformer: gelu
+cooldown_epochs: 0
+dilation_factor: 2
+learn_structure: true
+patience_epochs: 5
+double_attention: true
+loss_weight_beat: 1
+min_hops_per_beat: 24
+sanity_check_size: 1
+threshold_section: 0.05
+threshold_downbeat: 0.19
+best_threshold_beat: 0.21
+loss_weight_section: 15
+instrument_attention: true
+loss_weight_downbeat: 3
+loss_weight_function: 0.1
+best_threshold_downbeat: 0.24
+early_stopping_patience: 10
+validation_interval_epochs: 3
