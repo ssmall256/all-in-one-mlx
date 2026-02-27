@@ -74,13 +74,13 @@ If you use this in academic work, please cite the paper and the [upstream reposi
 ### pip
 
 ```bash
-pip install allin1-mlx
+pip install all-in-one-mlx
 ```
 
 ### uv (recommended)
 
 ```bash
-uv pip install allin1-mlx
+uv pip install all-in-one-mlx
 ```
 
 ---

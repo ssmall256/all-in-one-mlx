@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/allin1-mlx
+      url: https://test.pypi.org/p/all-in-one-mlx
     permissions:
       id-token: write
       contents: read

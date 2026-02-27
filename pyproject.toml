@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "allin1-mlx"
+name = "all-in-one-mlx"
 dynamic = ["version"]
 description = "All-In-One Music Structure Analyzer for Apple Silicon (MLX)"
 readme = "README.md"
