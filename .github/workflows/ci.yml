@@ -35,7 +35,8 @@ jobs:
             tests/test_json_formatting.py \
             tests/test_mlx_env.py \
             tests/test_mlx_inference.py \
-            tests/test_spectrogram_backends.py
+            tests/test_spectrogram_backends.py \
+            tests/test_runtime_shim.py
 
       - name: Build package
         run: python -m build

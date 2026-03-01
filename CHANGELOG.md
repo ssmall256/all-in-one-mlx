@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1rc1] - 2026-03-01
+
+### Added
+
+- Runtime integration shim (`configure`, `setup`, `init`, `enable_optimizations`, `apply_runtime_patches`) for external
+  orchestrators.
+- Compatibility module alias `all_in_one_mlx` for integrations expecting underscore-style import names.
+- Regression tests for lazy import behavior and runtime shim contract.
+
+### Changed
+
+- Made `allin1_mlx` top-level imports lazy to avoid importing full analysis stack at module import time.
+- Included `all_in_one_mlx` alias package in wheel and sdist artifacts.
+
 ## [1.0.0] - 2026-02-26
 
 ### Added
@@ -36,5 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Training code and instructions.
 - madmom as a required dependency (optional for comparison only).
 
-[unreleased]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.0...HEAD
+[unreleased]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.1rc1...HEAD
+[1.0.1rc1]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.0...v1.0.1rc1
 [1.0.0]: https://github.com/ssmall256/all-in-one-mlx/releases/tag/v1.0.0

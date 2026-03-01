@@ -51,7 +51,7 @@ allin1-mlx = "allin1_mlx.cli:main"
 path = "src/allin1_mlx/__about__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/allin1_mlx"]
+packages = ["src/allin1_mlx", "src/all_in_one_mlx"]
 exclude = [
   "**/*.so",
   "**/*.c",
@@ -70,6 +70,7 @@ include = [
   "/README.md",
   "/pyproject.toml",
   "/src/allin1_mlx",
+  "/src/all_in_one_mlx",
   "/tests",
 ]
 exclude = [
