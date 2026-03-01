@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.1rc1] - 2026-03-01
+## [1.0.1] - 2026-03-01
 
 ### Added
 
@@ -50,6 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Training code and instructions.
 - madmom as a required dependency (optional for comparison only).
 
-[unreleased]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.1rc1...HEAD
-[1.0.1rc1]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.0...v1.0.1rc1
+[unreleased]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ssmall256/all-in-one-mlx/releases/tag/v1.0.0
