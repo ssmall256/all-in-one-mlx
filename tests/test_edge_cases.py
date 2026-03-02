@@ -46,7 +46,7 @@ def test_visualize_plot_handles_empty_segments(monkeypatch):
   viz = importlib.import_module('allin1_mlx.visualize')
 
   class _DummySeparator:
-    def __init__(self, model, progress):
+    def __init__(self, model, progress, shifts=1):
       self.model = object()
       self.samplerate = 44100
 
