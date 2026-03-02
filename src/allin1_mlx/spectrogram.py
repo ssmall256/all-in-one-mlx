@@ -1,7 +1,7 @@
 from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from mlx_audio_io import batch_load as mlx_batch_load
@@ -21,6 +21,68 @@ _SPEC_FMAX = 17000.0
 _SPEC_FREF = 440.0
 
 _SPEC_CHECKED = False
+_SPEC_FAST_GUARD_STATE: Dict[str, Any] = {
+  "requested_backend": None,
+  "effective_backend": None,
+  "guard_triggered": False,
+  "guard_checked": False,
+  "guard_max_abs": None,
+  "guard_mean_abs": None,
+}
+
+
+def reset_spec_backend_guard_state(requested_backend: str | None = None) -> None:
+  _SPEC_FAST_GUARD_STATE["requested_backend"] = requested_backend
+  _SPEC_FAST_GUARD_STATE["effective_backend"] = requested_backend
+  _SPEC_FAST_GUARD_STATE["guard_triggered"] = False
+  _SPEC_FAST_GUARD_STATE["guard_checked"] = False
+  _SPEC_FAST_GUARD_STATE["guard_max_abs"] = None
+  _SPEC_FAST_GUARD_STATE["guard_mean_abs"] = None
+
+
+def get_spec_backend_guard_state() -> Dict[str, Any]:
+  return dict(_SPEC_FAST_GUARD_STATE)
+
+
+def _ensure_guard_state_for_backend(backend: str) -> None:
+  requested = _SPEC_FAST_GUARD_STATE["requested_backend"]
+  if requested != backend:
+    reset_spec_backend_guard_state(backend)
+
+
+def _should_fallback_to_mlx_fast_ref(
+  max_abs: float,
+  mean_abs: float,
+  max_thr: float,
+  mean_thr: float,
+) -> bool:
+  return max_abs > max_thr or mean_abs > mean_thr
+
+
+def _maybe_apply_spec_fast_guard(
+  *,
+  spec_fast: np.ndarray,
+  spec_ref: np.ndarray,
+  max_thr: float,
+  mean_thr: float,
+) -> bool:
+  diff = np.abs(spec_fast - spec_ref)
+  max_abs = float(diff.max())
+  mean_abs = float(diff.mean())
+  _SPEC_FAST_GUARD_STATE["guard_checked"] = True
+  _SPEC_FAST_GUARD_STATE["guard_max_abs"] = max_abs
+  _SPEC_FAST_GUARD_STATE["guard_mean_abs"] = mean_abs
+  if _should_fallback_to_mlx_fast_ref(max_abs, mean_abs, max_thr, mean_thr):
+    _SPEC_FAST_GUARD_STATE["effective_backend"] = "mlx"
+    _SPEC_FAST_GUARD_STATE["guard_triggered"] = True
+    print(
+      "=> mlx_fast guard triggered: "
+      f"max_abs={max_abs:.6f} mean_abs={mean_abs:.6f} "
+      f"(thresholds max<={max_thr:.6f}, mean<={mean_thr:.6f}); "
+      "falling back to mlx."
+    )
+    return True
+  return False
 
 
 def _madmom_processor():
@@ -398,8 +460,13 @@ def spectrogram_from_stems(
   backend: str = "mlx",
   check: bool = False,
   return_mx: bool = False,
+  spec_fast_guard: bool = True,
+  spec_fast_guard_max_abs: float = 1e-3,
+  spec_fast_guard_mean_abs: float = 1e-4,
 ) -> np.ndarray:
   """Compute spectrograms directly from in-memory stems."""
+  _ensure_guard_state_for_backend(backend)
+
   stem_order = ['bass', 'drums', 'other', 'vocals']
   signals = []
   for stem in stem_order:
@@ -407,16 +474,34 @@ def spectrogram_from_stems(
       raise KeyError(f"Missing stem '{stem}' in stems dict.")
     signals.append(_to_mono_signal(stems[stem]))
 
-  if backend == "mlx":
+  effective_backend = _SPEC_FAST_GUARD_STATE["effective_backend"] if backend == "mlx_fast" else backend
+  if effective_backend == "mlx":
     spec = _mlx_log_spectrogram_batch(signals, sample_rate, return_mx=return_mx)
-  elif backend == "mlx_fast":
+  elif effective_backend == "mlx_fast":
     try:
       spec = _mlx_log_spectrogram_fast_batch(signals, sample_rate, return_mx=return_mx)
     except ImportError as exc:
       print(f"=> mlx_fast unavailable ({exc}); falling back to mlx.")
+      _SPEC_FAST_GUARD_STATE["effective_backend"] = "mlx"
       spec = _mlx_log_spectrogram_batch(signals, sample_rate, return_mx=return_mx)
+    if spec_fast_guard and not _SPEC_FAST_GUARD_STATE["guard_checked"]:
+      ref = _mlx_log_spectrogram_batch(signals, sample_rate, return_mx=False)
+      spec_np = np.array(spec, copy=False) if return_mx else spec
+      fallback = _maybe_apply_spec_fast_guard(
+        spec_fast=spec_np,
+        spec_ref=ref,
+        max_thr=float(spec_fast_guard_max_abs),
+        mean_thr=float(spec_fast_guard_mean_abs),
+      )
+      if fallback:
+        if return_mx:
+          import mlx.core as mx
+
+          spec = mx.array(ref, dtype=mx.float32)
+        else:
+          spec = ref
   else:
-    raise ValueError(f"Unknown spectrogram backend '{backend}'.")
+    raise ValueError(f"Unknown spectrogram backend '{effective_backend}'.")
 
   if check:
     global _SPEC_CHECKED
@@ -436,7 +521,11 @@ def extract_spectrograms(
   overwrite: bool = False,
   backend: str = "madmom",
   check: bool = False,
+  spec_fast_guard: bool = True,
+  spec_fast_guard_max_abs: float = 1e-3,
+  spec_fast_guard_mean_abs: float = 1e-4,
 ):
+  _ensure_guard_state_for_backend(backend)
   todos = []
   spec_paths = []
   for src in demix_paths:
@@ -479,7 +568,15 @@ def extract_spectrograms(
       if multiprocess:
         print("=> Multiprocessing disabled for mlx spectrogram backends.")
       iterator = map(_extract_spectrogram_backend, [
-        (src, dst, backend, check)
+        (
+          src,
+          dst,
+          backend,
+          check,
+          spec_fast_guard,
+          float(spec_fast_guard_max_abs),
+          float(spec_fast_guard_mean_abs),
+        )
         for src, dst in todos
       ])
       for _ in tqdm(iterator, total=len(todos), desc='Extracting spectrograms'):
@@ -510,8 +607,8 @@ def _extract_spectrogram_madmom(args):
   np.save(str(dst), spec)
 
 
-def _extract_spectrogram_backend(args: Tuple[Path, Path, str, bool]):
-  src, dst, backend, check = args
+def _extract_spectrogram_backend(args: Tuple[Path, Path, str, bool, bool, float, float]):
+  src, dst, backend, check, spec_fast_guard, spec_fast_guard_max_abs, spec_fast_guard_mean_abs = args
 
   dst.parent.mkdir(parents=True, exist_ok=True)
 
@@ -521,16 +618,28 @@ def _extract_spectrogram_backend(args: Tuple[Path, Path, str, bool]):
   results = mlx_batch_load(stem_paths, mono=True, dtype="float32", num_workers=4)
   stems = [(np.array(audio, copy=False).squeeze(), sr) for audio, sr in results]
 
-  if backend == "mlx":
+  effective_backend = _SPEC_FAST_GUARD_STATE["effective_backend"] if backend == "mlx_fast" else backend
+  if effective_backend == "mlx":
     sr = stems[0][1]
     spec = _mlx_log_spectrogram_batch([signal for signal, _ in stems], sr)
-  elif backend == "mlx_fast":
+  elif effective_backend == "mlx_fast":
     sr = stems[0][1]
     try:
       spec = _mlx_log_spectrogram_fast_batch([signal for signal, _ in stems], sr)
     except ImportError as exc:
       print(f"=> mlx_fast unavailable ({exc}); falling back to mlx.")
+      _SPEC_FAST_GUARD_STATE["effective_backend"] = "mlx"
       spec = _mlx_log_spectrogram_batch([signal for signal, _ in stems], sr)
+    if spec_fast_guard and not _SPEC_FAST_GUARD_STATE["guard_checked"]:
+      ref = _mlx_log_spectrogram_batch([signal for signal, _ in stems], sr)
+      fallback = _maybe_apply_spec_fast_guard(
+        spec_fast=spec,
+        spec_ref=ref,
+        max_thr=float(spec_fast_guard_max_abs),
+        mean_thr=float(spec_fast_guard_mean_abs),
+      )
+      if fallback:
+        spec = ref
     if check:
       global _SPEC_CHECKED
       if not _SPEC_CHECKED:
@@ -539,5 +648,5 @@ def _extract_spectrogram_backend(args: Tuple[Path, Path, str, bool]):
         print(f"=> Spectrogram check (mlx_fast vs mlx): max={diff.max():.6f}, mean={diff.mean():.6f}")
         _SPEC_CHECKED = True
   else:
-    raise ValueError(f"Unknown spectrogram backend '{backend}'.")
+    raise ValueError(f"Unknown spectrogram backend '{effective_backend}'.")
   np.save(str(dst), spec)

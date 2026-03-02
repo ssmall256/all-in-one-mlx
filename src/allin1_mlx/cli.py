@@ -62,6 +62,14 @@ def make_parser():
                       help='Spectrogram backend to use (default: mlx_fast)')
   parser.add_argument('--spec-check', action='store_true',
                       help='Compare mlx_fast spectrograms to mlx once and report max/mean diff (default: False)')
+  parser.add_argument('--spec-fast-guard', action='store_true',
+                      help='Enable one-time mlx_fast parity guard against mlx (default: True)')
+  parser.add_argument('--no-spec-fast-guard', action='store_true',
+                      help='Disable mlx_fast parity guard')
+  parser.add_argument('--spec-fast-guard-max-abs', type=float, default=1e-3,
+                      help='Max abs spectrogram diff threshold for mlx_fast guard (default: 1e-3)')
+  parser.add_argument('--spec-fast-guard-mean-abs', type=float, default=1e-4,
+                      help='Mean abs spectrogram diff threshold for mlx_fast guard (default: 1e-4)')
   parser.add_argument('--overwrite', nargs='?', const='all', default=None,
                       help='Overwrite stages: all or csv (demix,spec,json,viz,sonify)')
   parser.add_argument('--no-multiprocess', action='store_true', default=False,
@@ -108,6 +116,14 @@ def main():
     ensemble_parallel = False
   else:
     ensemble_parallel = True
+  if args.spec_fast_guard and args.no_spec_fast_guard:
+    raise ValueError("Use only one of --spec-fast-guard or --no-spec-fast-guard.")
+  if args.spec_fast_guard:
+    spec_fast_guard = True
+  elif args.no_spec_fast_guard:
+    spec_fast_guard = False
+  else:
+    spec_fast_guard = True
 
   analyze(
     paths=args.paths,
@@ -132,6 +148,9 @@ def main():
     mlx_in_memory=mlx_in_memory,
     ensemble_parallel=ensemble_parallel,
     spec_check=args.spec_check,
+    spec_fast_guard=spec_fast_guard,
+    spec_fast_guard_max_abs=args.spec_fast_guard_max_abs,
+    spec_fast_guard_mean_abs=args.spec_fast_guard_mean_abs,
     timings_path=args.timings_path,
     timings_embed=args.timings_embed,
     timings_viz_path=args.timings_viz_path,

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-03-02
+
+### Added
+
+- `mlx_fast` parity guard controls in `analyze()` and CLI:
+  - `spec_fast_guard`
+  - `spec_fast_guard_max_abs`
+  - `spec_fast_guard_mean_abs`
+- Guard state helpers in `spectrogram.py` to expose requested/effective backend and guard trigger status.
+- Reproducible beat parity harness: `scripts/compare_beat_parity.py`.
+- Regression tests for guard threshold logic, sticky fallback behavior, and spectrogram backend guard behavior.
+
+### Changed
+
+- `mlx_fast` now performs a one-time parity check against `mlx` by default and falls back automatically when thresholds are exceeded.
+- Timing JSON summary now includes spectrogram backend guard metadata.
+
 ## [1.0.2] - 2026-03-02
 
 ### Changed
@@ -57,7 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Training code and instructions.
 - madmom as a required dependency (optional for comparison only).
 
-[unreleased]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.2...HEAD
+[unreleased]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ssmall256/all-in-one-mlx/releases/tag/v1.0.0

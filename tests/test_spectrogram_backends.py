@@ -1,11 +1,17 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import importlib
 
 import numpy as np
 import pytest
 from scipy.io import wavfile
 
-from allin1_mlx.spectrogram import extract_spectrograms
+from allin1_mlx.spectrogram import (
+  extract_spectrograms,
+  get_spec_backend_guard_state,
+  reset_spec_backend_guard_state,
+  spectrogram_from_stems,
+)
 
 
 def _write_stem(path: Path, sr: int, freq: float) -> None:
@@ -58,6 +64,37 @@ def test_spectrogram_mlx_produces_output():
     assert spec.shape[-1] == 81  # 12 bands per octave filterbank
 
 
+def test_spectrogram_mlx_fast_mlx_guard_thresholds():
+  with TemporaryDirectory() as tmp:
+    tmp_path = Path(tmp)
+    demix_dir = tmp_path / "demix"
+    track_dir = _make_demix_dir(demix_dir)
+
+    mlx_dir = tmp_path / "spec_mlx"
+    fast_dir = tmp_path / "spec_fast"
+    mlx_paths = extract_spectrograms(
+      [track_dir],
+      mlx_dir,
+      multiprocess=False,
+      backend="mlx",
+    )
+    reset_spec_backend_guard_state("mlx_fast")
+    fast_paths = extract_spectrograms(
+      [track_dir],
+      fast_dir,
+      multiprocess=False,
+      backend="mlx_fast",
+      spec_fast_guard=False,
+    )
+
+    spec_mlx = _load_spec(mlx_paths[0])
+    spec_fast = _load_spec(fast_paths[0])
+    assert spec_mlx.shape == spec_fast.shape
+    diff = np.abs(spec_mlx - spec_fast)
+    assert float(diff.max()) <= 1e-3
+    assert float(diff.mean()) <= 1e-4
+
+
 @pytest.mark.skipif(not _madmom_available(), reason="madmom not installed")
 def test_spectrogram_madmom_mlx_parity():
   with TemporaryDirectory() as tmp:
@@ -86,3 +123,37 @@ def test_spectrogram_madmom_mlx_parity():
     assert spec_madmom.shape == spec_mlx.shape
     diff = np.abs(spec_madmom - spec_mlx)
     assert float(diff.max()) <= 1e-4
+
+
+def test_spectrogram_guard_forced_fallback_mocked(monkeypatch):
+  spectrogram_module = importlib.import_module("allin1_mlx.spectrogram")
+  stems = {
+    "bass": np.zeros(64, dtype=np.float32),
+    "drums": np.zeros(64, dtype=np.float32),
+    "other": np.zeros(64, dtype=np.float32),
+    "vocals": np.zeros(64, dtype=np.float32),
+  }
+
+  def fake_fast(signals, sample_rate, return_mx=False):
+    return np.ones((4, 2, 3), dtype=np.float32)
+
+  def fake_ref(signals, sample_rate, return_mx=False):
+    return np.zeros((4, 2, 3), dtype=np.float32)
+
+  monkeypatch.setattr(spectrogram_module, "_mlx_log_spectrogram_fast_batch", fake_fast)
+  monkeypatch.setattr(spectrogram_module, "_mlx_log_spectrogram_batch", fake_ref)
+
+  reset_spec_backend_guard_state("mlx_fast")
+  spec = spectrogram_from_stems(
+    stems,
+    sample_rate=44100,
+    backend="mlx_fast",
+    spec_fast_guard=True,
+    spec_fast_guard_max_abs=1e-6,
+    spec_fast_guard_mean_abs=1e-6,
+  )
+  state = get_spec_backend_guard_state()
+  assert np.all(spec == 0.0)
+  assert state["requested_backend"] == "mlx_fast"
+  assert state["effective_backend"] == "mlx"
+  assert state["guard_triggered"] is True

@@ -22,7 +22,12 @@ from .helpers import (
   save_results,
 )
 from .models import load_pretrained_model_mlx
-from .spectrogram import extract_spectrograms, spectrogram_from_stems
+from .spectrogram import (
+  extract_spectrograms,
+  get_spec_backend_guard_state,
+  reset_spec_backend_guard_state,
+  spectrogram_from_stems,
+)
 from .typings import AnalysisResult, PathLike
 from .utils import load_result, mkpath
 
@@ -254,6 +259,9 @@ def analyze(
   mlx_in_memory: Optional[bool] = None,
   ensemble_parallel: bool = True,
   spec_check: bool = False,
+  spec_fast_guard: bool = True,
+  spec_fast_guard_max_abs: float = 1e-3,
+  spec_fast_guard_mean_abs: float = 1e-4,
   timings_path: PathLike = None,
   timings_embed: bool = False,
   timings_viz_path: PathLike = None,
@@ -273,6 +281,7 @@ def analyze(
     spec_backend = "mlx_fast"
   if spec_backend not in {"mlx", "mlx_fast"}:
     raise ValueError("spec_backend must be 'mlx' or 'mlx_fast' for MLX-only builds.")
+  reset_spec_backend_guard_state(spec_backend)
   if dbn_backend is not None:
     dbn_backend = str(dbn_backend).strip().lower()
     if dbn_backend not in {"auto", "cpp", "cython", "numba", "python"}:
@@ -464,6 +473,9 @@ def analyze(
         overwrite=overwrite_spec,
         backend=spec_backend,
         check=spec_check,
+        spec_fast_guard=spec_fast_guard,
+        spec_fast_guard_max_abs=spec_fast_guard_max_abs,
+        spec_fast_guard_mean_abs=spec_fast_guard_mean_abs,
       )
       t1 = time.perf_counter()
       _emit_timing("spectrogram", None, t0, t1, {"count": len(spec_paths)})
@@ -518,6 +530,9 @@ def analyze(
             backend=spec_backend,
             check=spec_check,
             return_mx=True,
+            spec_fast_guard=spec_fast_guard,
+            spec_fast_guard_max_abs=spec_fast_guard_max_abs,
+            spec_fast_guard_mean_abs=spec_fast_guard_mean_abs,
           )
           t3 = time.perf_counter()
           _emit_timing("spectrogram", path, t2, t3)
@@ -698,6 +713,8 @@ def analyze(
       "model": model_name,
       "device": device,
       "dbn_backend": os.environ.get("ALLIN1_DBN_BACKEND", "auto"),
+      "spec_backend_requested": spec_backend,
+      "spec_backend_guard": get_spec_backend_guard_state(),
       "num_tracks": len(paths),
       "wall_time_s": round(float(analyze_end - analyze_start), 2),
       "stage_totals_s": {k: round(v, 2) for k, v in stage_totals.items()},

@@ -129,6 +129,17 @@ allin1-mlx song.wav --spec-backend mlx_fast   # default
 allin1-mlx song.wav --spec-backend mlx        # reference path
 ```
 
+- Parity guard for `mlx_fast` (enabled by default):
+
+```bash
+allin1-mlx song.wav --spec-fast-guard
+allin1-mlx song.wav --no-spec-fast-guard
+allin1-mlx song.wav --spec-fast-guard-max-abs 1e-3 --spec-fast-guard-mean-abs 1e-4
+```
+
+When `--spec-backend mlx_fast` is used, the guard runs a one-time comparison against `mlx`.
+If the diff exceeds thresholds, the run automatically falls back to `mlx` for the remaining tracks.
+
 - One-time spectrogram correctness check (reports max/mean diff):
 
 ```bash
@@ -219,6 +230,22 @@ Optional outputs:
 - Artifact naming uses input basename/stem for intermediate and output files.
 - If multiple inputs share the same basename (for example `a/song.mp3` and `b/song.wav`), artifacts may overwrite each other or be reused unexpectedly.
 - Workaround: process those files separately or rename files so basenames are unique.
+
+## Beat parity workflow
+
+Use the reproducible parity harness to compare upstream CPU, all-in-one-mps, and all-in-one-mlx:
+
+```bash
+python scripts/compare_beat_parity.py \
+  "/path/to/song.wav" \
+  --upstream-python /path/to/all-in-one/.venv/bin/python \
+  --mps-python /path/to/all-in-one-mps/.venv/bin/python \
+  --mlx-python /path/to/all-in-one-mlx/.venv/bin/python \
+  --mlx-weights-dir /path/to/all-in-one-mlx/mlx-weights \
+  --output /tmp/allin1_beat_parity.json
+```
+
+The report includes beat/downbeat counts and timing delta summaries (median/mean signed, p90/max abs).
 
 ---
 
