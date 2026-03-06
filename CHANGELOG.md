@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-03-06
+
+### Changed
+
+- Bumped `demucs-mlx` to `>=1.4.3` (direct in-memory resampling, no temp file round-trips).
+- Bumped `mlx-audio-io` to `>=1.3.9` (auto-selects best resampling quality when `sr` is specified).
+
 ## [1.0.3] - 2026-03-02
 
 ### Added
@@ -74,7 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Training code and instructions.
 - madmom as a required dependency (optional for comparison only).
 
-[unreleased]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.3...HEAD
+[unreleased]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.4...v1.0.5
 [1.0.3]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.0...v1.0.1
