@@ -1,6 +1,6 @@
+import importlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import importlib
 
 import numpy as np
 import pytest

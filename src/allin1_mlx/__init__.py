@@ -87,8 +87,8 @@ def _install_lazy_properties() -> None:
   module ``__class__`` with ``__getattribute__`` that intercepts accesses to
   shadowed names and returns the intended function instead of the submodule.
   """
-  import types
   import sys
+  import types
 
   this = sys.modules[__name__]
 
