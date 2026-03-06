@@ -23,16 +23,16 @@ classifiers = [
   "Topic :: Multimedia :: Sound/Audio :: Analysis",
 ]
 dependencies = [
-  "mlx>=0.30.6",
+  "mlx>=0.31.0",
   "numpy>=1.26.0",
   "librosa>=0.11.0",
   "hydra-core",
   "omegaconf",
   "huggingface_hub",
   "matplotlib",
-  "natten-mlx>=0.3.0",
+  "natten-mlx>=0.3.1",
   "demucs-mlx>=1.4.0",
-  "mlx-audio-io>=1.3.1",
+  "mlx-audio-io>=1.3.8",
   "numba>=0.60.0",
 ]
 
