@@ -10,7 +10,7 @@ from ..typings import AllInOneOutput
 from .dbn_native import DBNDownBeatTrackingProcessor
 
 _DBN_CACHE = {}
-_EPSILON = mx.array(1e-8)  # Cache epsilon constant
+_EPSILON = 1e-8  # Python scalar: uses MLX weak-type promotion (no closure capture risk)
 
 
 def postprocess_metrical_structure_mlx(
@@ -18,6 +18,8 @@ def postprocess_metrical_structure_mlx(
   cfg: Config,
   prob_beat: np.ndarray = None,
   prob_downbeat: np.ndarray = None,
+  prob_beat_mx: mx.array = None,
+  prob_downbeat_mx: mx.array = None,
   timings: dict = None,
 ):
   t0 = time.perf_counter()
@@ -30,8 +32,11 @@ def postprocess_metrical_structure_mlx(
     )
   postprocessor_downbeat = _DBN_CACHE[cache_key]
 
-  # Use pre-computed probabilities if provided, otherwise compute from logits
-  if prob_beat is not None and prob_downbeat is not None:
+  # Use pre-computed MLX arrays directly to avoid NumPy->MLX round-trip
+  if prob_beat_mx is not None and prob_downbeat_mx is not None:
+    activations_beat = prob_beat_mx
+    activations_downbeat = prob_downbeat_mx
+  elif prob_beat is not None and prob_downbeat is not None:
     activations_beat = mx.array(prob_beat)
     activations_downbeat = mx.array(prob_downbeat)
   else:

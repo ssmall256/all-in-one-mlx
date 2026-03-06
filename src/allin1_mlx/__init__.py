@@ -78,6 +78,39 @@ def __getattr__(name: str) -> Any:
   return value
 
 
+def _install_lazy_properties() -> None:
+  """Prevent same-named submodules from shadowing lazy-loaded functions.
+
+  When ``import allin1_mlx.analyze`` runs, Python registers the *module* as
+  ``allin1_mlx.analyze`` in the package ``__dict__``, bypassing ``__getattr__``.
+  We use ``__init_subclass__`` isn't applicable here, so instead we install a
+  module ``__class__`` with ``__getattribute__`` that intercepts accesses to
+  shadowed names and returns the intended function instead of the submodule.
+  """
+  import types
+  import sys
+
+  this = sys.modules[__name__]
+
+  class _LazyModule(types.ModuleType):
+    def __getattribute__(self, name: str) -> Any:
+      value = super().__getattribute__(name)
+      target = _LAZY_ATTRS.get(name)
+      if target is not None and isinstance(value, types.ModuleType):
+        # Submodule is shadowing our lazy-loaded attribute — resolve it
+        module_name, attr_name = target
+        module = importlib.import_module(module_name)
+        resolved = getattr(module, attr_name)
+        super().__setattr__(name, resolved)
+        return resolved
+      return value
+
+  this.__class__ = _LazyModule
+
+
+_install_lazy_properties()
+
+
 def __dir__() -> list[str]:
   return sorted(set(globals()).union(_LAZY_ATTRS))
 

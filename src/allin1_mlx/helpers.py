@@ -154,6 +154,8 @@ def _run_inference_mlx_spec(
     model.cfg,
     prob_beat=prob_beat,
     prob_downbeat=prob_downbeat,
+    prob_beat_mx=prob_beat_mx,
+    prob_downbeat_mx=prob_downbeat_mx,
     timings=metrical_timings,
   )
   functional_structure = postprocess_functional_structure_mlx(
@@ -263,10 +265,8 @@ def run_inference_mlx_batch(
     forward = getattr(model, compiled_attr)
     if include_embeddings:
       logits_beat, logits_downbeat, logits_section, logits_function, embeddings = forward(mx.array(spec_batch))
-      mx.eval(logits_beat, logits_downbeat, logits_section, logits_function, embeddings)
     else:
       logits_beat, logits_downbeat, logits_section, logits_function = forward(mx.array(spec_batch))
-      mx.eval(logits_beat, logits_downbeat, logits_section, logits_function)
       embeddings = None
     logits = AllInOneOutput(
       logits_beat=logits_beat,
@@ -277,22 +277,19 @@ def run_inference_mlx_batch(
     )
   else:
     logits = forward(mx.array(spec_batch), return_embeddings=include_embeddings)
-    to_eval = [
-      logits.logits_beat,
-      logits.logits_downbeat,
-      logits.logits_section,
-      logits.logits_function,
-    ]
-    if include_embeddings and logits.embeddings is not None:
-      to_eval.append(logits.embeddings)
-    mx.eval(*to_eval)
-  t2 = time.perf_counter()
 
+  # Compute probabilities from logits (cheap ops that extend the lazy graph).
   prob_beat_mx = mx.sigmoid(logits.logits_beat)
   prob_downbeat_mx = mx.sigmoid(logits.logits_downbeat)
   prob_section_mx = mx.sigmoid(logits.logits_section)
   prob_function_mx = mx.softmax(logits.logits_function, axis=1)
-  mx.eval(prob_beat_mx, prob_downbeat_mx, prob_section_mx, prob_function_mx)
+
+  # Single eval: materialises the forward pass + probabilities together.
+  to_eval = [prob_beat_mx, prob_downbeat_mx, prob_section_mx, prob_function_mx]
+  if include_embeddings and logits.embeddings is not None:
+    to_eval.append(logits.embeddings)
+  mx.eval(*to_eval)
+  t2 = time.perf_counter()
   prob_beat = np.array(prob_beat_mx, copy=False)
   prob_downbeat = np.array(prob_downbeat_mx, copy=False)
   prob_section = np.array(prob_section_mx, copy=False)
@@ -319,6 +316,8 @@ def run_inference_mlx_batch(
       model.cfg,
       prob_beat=prob_beat[idx],
       prob_downbeat=prob_downbeat[idx],
+      prob_beat_mx=prob_beat_mx[idx],
+      prob_downbeat_mx=prob_downbeat_mx[idx],
       timings=metrical_timings,
     )
     functional_structure = postprocess_functional_structure_mlx(
