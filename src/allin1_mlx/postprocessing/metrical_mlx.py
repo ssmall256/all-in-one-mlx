@@ -12,6 +12,66 @@ from .dbn_native import DBNDownBeatTrackingProcessor
 _DBN_CACHE = {}
 _EPSILON = 1e-8  # Python scalar: uses MLX weak-type promotion (no closure capture risk)
 
+# ---------------------------------------------------------------------------
+# Fused Metal kernel: combines 5-7 separate MLX ops into a single GPU dispatch.
+#
+# Per-frame computation (one thread per frame):
+#   xbeat  = max(eps, beat - downbeat)
+#   no     = 1.0 - (beat + downbeat) * 0.5
+#   total  = xbeat + downbeat + no
+#   out[i] = [xbeat/total, downbeat/total, no/total]
+# ---------------------------------------------------------------------------
+_FUSED_METRICAL_SOURCE = """
+uint idx = thread_position_in_grid.x;
+uint N = beat_shape[0];
+if (idx >= N) return;
+
+float b = (float)beat[idx];
+float d = (float)downbeat[idx];
+
+float xbeat = max(1e-8f, b - d);
+float no_act = 1.0f - (b + d) * 0.5f;
+float total = xbeat + d + no_act;
+float inv = 1.0f / total;
+
+out[idx * 3]     = (T)(xbeat * inv);
+out[idx * 3 + 1] = (T)(d * inv);
+out[idx * 3 + 2] = (T)(no_act * inv);
+"""
+
+_fused_metrical_kernel = mx.fast.metal_kernel(
+  name="fused_metrical_prep",
+  input_names=["beat", "downbeat"],
+  output_names=["out"],
+  source=_FUSED_METRICAL_SOURCE,
+)
+
+# Minimum frame count to justify custom kernel launch overhead.
+_FUSED_KERNEL_MIN_FRAMES = 256
+
+
+def _fused_metrical_prep(beat: mx.array, downbeat: mx.array) -> mx.array:
+  """Fused metrical activation prep via custom Metal kernel."""
+  N = beat.shape[0]
+  tg = min(256, N)
+  return _fused_metrical_kernel(
+    inputs=[beat, downbeat],
+    template=[("T", beat.dtype)],
+    grid=(N, 1, 1),
+    threadgroup=(tg, 1, 1),
+    output_shapes=[(N, 3)],
+    output_dtypes=[beat.dtype],
+  )[0]
+
+
+def _mlx_metrical_prep(beat: mx.array, downbeat: mx.array) -> mx.array:
+  """Reference MLX implementation (fallback for small inputs)."""
+  xbeat = mx.maximum(_EPSILON, beat - downbeat)
+  no = 1.0 - (beat + downbeat) * 0.5
+  combined = mx.stack([xbeat, downbeat, no], axis=-1)
+  norm = mx.sum(combined, axis=-1, keepdims=True)
+  return combined / norm
+
 
 def postprocess_metrical_structure_mlx(
   logits: AllInOneOutput,
@@ -44,19 +104,13 @@ def postprocess_metrical_structure_mlx(
     activations_beat = mx.sigmoid(logits.logits_beat[0])
     activations_downbeat = mx.sigmoid(logits.logits_downbeat[0])
 
-  # Compute all three channels in a fused manner
-  # xbeat = max(eps, beat - downbeat)
-  # no = (2 - beat - downbeat) / 2 = 1 - (beat + downbeat) / 2
-  activations_xbeat = mx.maximum(_EPSILON, activations_beat - activations_downbeat)
-  activations_no = 1.0 - (activations_beat + activations_downbeat) * 0.5
+  # Fuse activation combination + normalization into a single GPU dispatch.
+  N = activations_beat.shape[0]
+  if N >= _FUSED_KERNEL_MIN_FRAMES:
+    activations_combined = _fused_metrical_prep(activations_beat, activations_downbeat)
+  else:
+    activations_combined = _mlx_metrical_prep(activations_beat, activations_downbeat)
 
-  # Stack and normalize in one operation
-  activations_combined = mx.stack([activations_xbeat, activations_downbeat, activations_no], axis=-1)
-  # Fused normalization
-  norm_factor = mx.sum(activations_combined, axis=-1, keepdims=True)
-  activations_combined = activations_combined / norm_factor
-
-  # Force evaluation before converting to NumPy
   mx.eval(activations_combined)
   activations_combined = np.array(activations_combined)
   t1 = time.perf_counter()
