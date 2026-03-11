@@ -1,56 +1,39 @@
 #!/usr/bin/env python3
-"""
-Convert all-in-one PyTorch checkpoints to MLX-compatible weights.
-"""
+"""Thin wrapper around `mlx-weights convert` for all-in-one checkpoints."""
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
-from allin1_mlx.models.mlx_conversion import (
-  _load_torch_checkpoint,
-  convert_state_dict,
-  convert_torch_checkpoint_to_mlx,
-  summarize_converted_shapes,
-)
+from mlx_weights import convert_model
 
 
 def parse_args() -> argparse.Namespace:
   parser = argparse.ArgumentParser("convert_allinone_weights_to_mlx")
-  group = parser.add_mutually_exclusive_group(required=True)
-  group.add_argument("--model", type=str, help="Pretrained model name (e.g. harmonix-fold0)")
-  group.add_argument("--checkpoint", type=Path, help="Path to local PyTorch checkpoint (.pth)")
-  parser.add_argument("--cache-dir", type=Path, default=None, help="HF cache dir for pretrained weights")
-  parser.add_argument("--output", type=Path, default=None, help="Output path (.safetensors or .npz)")
-  parser.add_argument("--no-config", action="store_true", help="Do not write config sidecar")
+  parser.add_argument("--model", required=True, type=str, help="Pretrained model name (e.g. harmonix-fold0)")
+  parser.add_argument("--checkpoint", type=Path, help="Optional local PyTorch checkpoint (.pth)")
+  parser.add_argument("--output", type=Path, default=None, help="Output safetensors path")
+  parser.add_argument("--config", type=Path, default=None, help="Output config JSON path")
   return parser.parse_args()
 
 
 def main() -> None:
   args = parse_args()
+  output = args.output
+  config = args.config
+  if output is not None and config is None:
+    config = output.with_suffix(".json")
 
-  torch_checkpoint = args.checkpoint
-  pt_state = None
-  if torch_checkpoint is not None:
-    pt_state, _ = _load_torch_checkpoint(torch_checkpoint)
-
-  out_path, config_path = convert_torch_checkpoint_to_mlx(
-    model_name=args.model,
-    torch_checkpoint=torch_checkpoint,
-    cache_dir=args.cache_dir,
-    output=args.output,
-    save_config=not args.no_config,
+  result = convert_model(
+    f"allin1/{args.model}",
+    input_path=args.checkpoint,
+    output_path=output,
+    extra_output_paths=None if config is None else {"config": config},
   )
-
-  if pt_state is not None:
-    mlx_state = convert_state_dict(pt_state)
-    total, transposed = summarize_converted_shapes(pt_state, mlx_state)
-    print("Conversion complete")
-    print(f" - Parameters processed: {total} - Layout-adjusted: {transposed}")
-
-  print(f" - Written weights: {out_path}")
+  print(f"wrote {result.primary}")
+  config_path = result.get("config")
   if config_path is not None:
-    print(f" - Written config:  {config_path}")
+    print(f"wrote {config_path}")
 
 
 if __name__ == "__main__":

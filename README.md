@@ -220,10 +220,16 @@ Optional outputs:
 
 | Item | Behavior |
 |---|---|
-| Source | MLX checkpoints are loaded from local files |
+| Source | MLX checkpoints are resolved from the shared `mlx-weights` cache by default |
 | Packaging | Release wheels/sdists do not bundle model weights |
-| Default lookup path | `./mlx-weights` |
+| Default lookup path | `~/.cache/mlx-weights/all-in-one-mlx` |
 | Custom paths | Use `--mlx-weights-dir` or explicit `--mlx-weights-path` and `--mlx-config-path` |
+
+Pre-convert a fold explicitly with:
+
+```bash
+mlx-weights convert allin1/harmonix-fold0
+```
 
 ## Known limitations
 
@@ -241,7 +247,7 @@ python scripts/compare_beat_parity.py \
   --upstream-python /path/to/all-in-one/.venv/bin/python \
   --mps-python /path/to/all-in-one-mps/.venv/bin/python \
   --mlx-python /path/to/all-in-one-mlx/.venv/bin/python \
-  --mlx-weights-dir /path/to/all-in-one-mlx/mlx-weights \
+  --mlx-weights-dir ~/.cache/mlx-weights/all-in-one-mlx \
   --output /tmp/allin1_beat_parity.json
 ```
 

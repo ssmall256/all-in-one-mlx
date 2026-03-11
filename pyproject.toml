@@ -24,6 +24,7 @@ classifiers = [
 ]
 dependencies = [
   "mlx>=0.31.0",
+  "mlx-weights>=0.1.0",
   "numpy>=1.26.0",
   "librosa>=0.11.0",
   "hydra-core",
@@ -112,3 +113,6 @@ quote-style = "single"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.uv.sources]
+mlx-weights = { path = "../mlx-weights", editable = true }

@@ -27,7 +27,7 @@ def make_parser():
   parser.add_argument('-d', '--device', type=str, default='mlx', choices=['mlx'],
                       help='Device to use (MLX-only build)')
   parser.add_argument('--mlx-weights-dir', type=Path, default=None,
-                      help='Directory containing MLX weights/config (default lookup: ./mlx-weights)')
+                      help='Directory containing MLX weights/config (default lookup: ~/.cache/mlx-weights/all-in-one-mlx)')
   parser.add_argument('--mlx-weights-path', type=Path, default=None,
                       help='Path to MLX weights file (overrides --mlx-weights-dir)')
   parser.add_argument('--mlx-config-path', type=Path, default=None,

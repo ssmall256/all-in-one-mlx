@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
+from mlx_weights import cache_path, convert_model
 from omegaconf import OmegaConf
 
 from ..typings import PathLike
@@ -32,6 +33,10 @@ ENSEMBLE_MODELS = {
 }
 
 
+def _default_cache_weights_path(model_name: str) -> Path:
+  return cache_path("all-in-one-mlx", f"{model_name}_mlx.safetensors")
+
+
 def _resolve_weights_path(
   model_name: Optional[str],
   weights_path: Optional[PathLike],
@@ -41,7 +46,13 @@ def _resolve_weights_path(
     return Path(weights_path)
   if model_name is None:
     raise ValueError("model_name is required when weights_path is not provided.")
-  base_dir = Path(weights_dir) if weights_dir is not None else Path("mlx-weights")
+  if weights_dir is None:
+    candidate = _default_cache_weights_path(model_name)
+    if not candidate.is_file():
+      result = convert_model(f"allin1/{model_name}")
+      return result.primary
+    return candidate
+  base_dir = Path(weights_dir)
   for suffix in (".safetensors", ".npz"):
     candidate = base_dir / f"{model_name}_mlx{suffix}"
     if candidate.is_file():
