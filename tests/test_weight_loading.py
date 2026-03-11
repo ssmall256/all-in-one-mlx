@@ -44,14 +44,14 @@ def test_default_loader_uses_mlx_weights_cache_and_conversion(tmp_path, monkeypa
   config_path = tmp_path / "all-in-one-mlx" / "harmonix-fold0_mlx.json"
   seen = {}
 
-  def fake_convert_model(name, input_path=None, output_path=None, extra_output_paths=None):
+  def fake_convert_model(name, convert_if_missing=False, input_path=None, output_path=None, extra_output_paths=None):
     seen["name"] = name
     weights_path.parent.mkdir(parents=True, exist_ok=True)
     weights_path.write_bytes(b"weights")
     config_path.write_text("{}", encoding="utf-8")
     return SimpleNamespace(primary=weights_path)
 
-  monkeypatch.setattr(loaders_mlx, "convert_model", fake_convert_model)
+  monkeypatch.setattr(loaders_mlx, "resolve_converted_model", fake_convert_model)
   monkeypatch.setattr(loaders_mlx.OmegaConf, "load", lambda path: {"config_path": str(path)})
 
   model = loaders_mlx.load_pretrained_model_mlx(model_name="harmonix-fold0")
