@@ -1,0 +1,95 @@
+{
+  "spec_path": "spec/test.npy",
+  "spec_shape": [
+    4,
+    19557,
+    81
+  ],
+  "batch_size": 4,
+  "warmup": 2,
+  "iters": 8,
+  "wall_s": {
+    "mean": 7.435644078126643,
+    "min": 6.874495583004318,
+    "median": 7.359003291989211,
+    "max": 8.083663458004594
+  },
+  "nn_s": {
+    "mean": 5.279134427131794,
+    "min": 4.731572917022277,
+    "median": 5.222731062502135,
+    "max": 5.929537874995731
+  },
+  "postprocess_s": {
+    "mean": 0.5393853489949834,
+    "min": 0.5283675839891657,
+    "median": 0.5375481664959807,
+    "max": 0.5700696249841712
+  },
+  "beats_len": 323,
+  "downbeats_len": 81,
+  "segments_len": 12,
+  "bpm": 105.0,
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 0.35,
+      "label": "start"
+    },
+    {
+      "start": 0.35,
+      "end": 19.56,
+      "label": "intro"
+    },
+    {
+      "start": 19.56,
+      "end": 42.63,
+      "label": "verse"
+    },
+    {
+      "start": 42.63,
+      "end": 56.41,
+      "label": "chorus"
+    },
+    {
+      "start": 56.41,
+      "end": 83.77,
+      "label": "chorus"
+    },
+    {
+      "start": 83.77,
+      "end": 97.56,
+      "label": "verse"
+    },
+    {
+      "start": 97.56,
+      "end": 111.34,
+      "label": "verse"
+    },
+    {
+      "start": 111.34,
+      "end": 129.66,
+      "label": "chorus"
+    },
+    {
+      "start": 129.66,
+      "end": 147.81,
+      "label": "solo"
+    },
+    {
+      "start": 147.81,
+      "end": 173.91,
+      "label": "chorus"
+    },
+    {
+      "start": 173.91,
+      "end": 189.73,
+      "label": "outro"
+    },
+    {
+      "start": 189.73,
+      "end": 195.57,
+      "label": "end"
+    }
+  ]
+}

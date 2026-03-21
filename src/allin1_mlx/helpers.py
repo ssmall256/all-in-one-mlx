@@ -234,6 +234,7 @@ def run_inference_mlx_batch(
 
   spec_batch = np.stack(specs, axis=0)
   t1 = time.perf_counter()
+  spec_batch_mx = mx.array(spec_batch)
   forward = model
   if compile_forward:
     compiled_attr = "_compiled_forward_with_embeddings" if include_embeddings else "_compiled_forward_no_embeddings"
@@ -264,9 +265,9 @@ def run_inference_mlx_batch(
       setattr(model, compiled_attr, _forward)
     forward = getattr(model, compiled_attr)
     if include_embeddings:
-      logits_beat, logits_downbeat, logits_section, logits_function, embeddings = forward(mx.array(spec_batch))
+      logits_beat, logits_downbeat, logits_section, logits_function, embeddings = forward(spec_batch_mx)
     else:
-      logits_beat, logits_downbeat, logits_section, logits_function = forward(mx.array(spec_batch))
+      logits_beat, logits_downbeat, logits_section, logits_function = forward(spec_batch_mx)
       embeddings = None
     logits = AllInOneOutput(
       logits_beat=logits_beat,
@@ -276,7 +277,7 @@ def run_inference_mlx_batch(
       embeddings=embeddings,
     )
   else:
-    logits = forward(mx.array(spec_batch), return_embeddings=include_embeddings)
+    logits = forward(spec_batch_mx, return_embeddings=include_embeddings)
 
   # Compute probabilities from logits (cheap ops that extend the lazy graph).
   prob_beat_mx = mx.sigmoid(logits.logits_beat)
@@ -294,6 +295,9 @@ def run_inference_mlx_batch(
   prob_downbeat = np.array(prob_downbeat_mx, copy=False)
   prob_section = np.array(prob_section_mx, copy=False)
   prob_function = np.array(prob_function_mx, copy=False)
+  embeddings_batch = None
+  if include_embeddings and logits.embeddings is not None:
+    embeddings_batch = np.array(logits.embeddings, copy=False)
 
   for timings in timings_list:
     timings["nn"] = (t1, t2)
@@ -306,7 +310,7 @@ def run_inference_mlx_batch(
       logits_downbeat=logits.logits_downbeat[idx:idx + 1],
       logits_section=logits.logits_section[idx:idx + 1],
       logits_function=logits.logits_function[idx:idx + 1],
-      embeddings=(logits.embeddings[idx:idx + 1] if logits.embeddings is not None else None),
+      embeddings=None,
     )
 
     metrical_timings = {}
@@ -345,20 +349,13 @@ def run_inference_mlx_batch(
       **metrical_structure,
     )
 
-    if include_activations or include_embeddings:
-      to_eval = []
-      if include_activations:
-        activations = {
-          'beat': prob_beat[idx],
-          'downbeat': prob_downbeat[idx],
-          'segment': prob_section[idx],
-          'label': prob_function[idx],
-        }
-      if include_embeddings:
-        embeddings = item_logits.embeddings[0]
-        to_eval.append(embeddings)
-      if to_eval:
-        mx.eval(*to_eval)
+    if include_activations:
+      activations = {
+        'beat': prob_beat[idx],
+        'downbeat': prob_downbeat[idx],
+        'segment': prob_section[idx],
+        'label': prob_function[idx],
+      }
 
     if include_activations:
       result.activations = {
@@ -368,8 +365,8 @@ def run_inference_mlx_batch(
         'label': np.array(activations['label'], copy=False),
       }
 
-    if include_embeddings:
-      result.embeddings = np.array(embeddings, copy=False)
+    if include_embeddings and embeddings_batch is not None:
+      result.embeddings = embeddings_batch[idx]
 
     results.append(result)
 

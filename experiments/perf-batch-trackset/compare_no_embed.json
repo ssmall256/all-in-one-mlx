@@ -1,0 +1,102 @@
+{
+  "spec_paths": [
+    "experiments/perf-batch-trackset/spec/come_together_45s.npy",
+    "experiments/perf-batch-trackset/spec/drive_my_car_45s.npy",
+    "experiments/perf-batch-trackset/spec/no_reply_45s.npy",
+    "experiments/perf-batch-trackset/spec/with_a_little_help_45s.npy"
+  ],
+  "spec_shapes": [
+    [
+      4,
+      4500,
+      81
+    ],
+    [
+      4,
+      4500,
+      81
+    ],
+    [
+      4,
+      4500,
+      81
+    ],
+    [
+      4,
+      4500,
+      81
+    ]
+  ],
+  "batch_size": 4,
+  "warmup": 2,
+  "iters": 8,
+  "legacy": {
+    "wall_s": {
+      "mean": 1.422880192505545,
+      "min": 1.4155007500085048,
+      "median": 1.4218896249949466,
+      "max": 1.4331911660265177
+    },
+    "nn_s": {
+      "mean": 0.89470919262385,
+      "min": 0.8892411660053767,
+      "median": 0.8946572495333385,
+      "max": 0.903665583988186
+    },
+    "postprocess_s": {
+      "mean": 0.13048101550521096,
+      "min": 0.1297072499874048,
+      "median": 0.13008858350804076,
+      "max": 0.13218949997099116
+    }
+  },
+  "optimized": {
+    "wall_s": {
+      "mean": 1.419009848992573,
+      "min": 1.4013234580052085,
+      "median": 1.4212306664849166,
+      "max": 1.4345120419748127
+    },
+    "nn_s": {
+      "mean": 0.8943791512356256,
+      "min": 0.8854938749573193,
+      "median": 0.8937511669646483,
+      "max": 0.9023275839863345
+    },
+    "postprocess_s": {
+      "mean": 0.12986964062292827,
+      "min": 0.12745962501503527,
+      "median": 0.13007874999311753,
+      "max": 0.1334779589669779
+    }
+  },
+  "parity": {
+    "all_exact": true,
+    "per_track": [
+      {
+        "path": "bench_0.wav",
+        "exact": true,
+        "beats_len": 62,
+        "segments_len": 4
+      },
+      {
+        "path": "bench_1.wav",
+        "exact": true,
+        "beats_len": 92,
+        "segments_len": 4
+      },
+      {
+        "path": "bench_2.wav",
+        "exact": true,
+        "beats_len": 94,
+        "segments_len": 4
+      },
+      {
+        "path": "bench_3.wav",
+        "exact": true,
+        "beats_len": 84,
+        "segments_len": 4
+      }
+    ]
+  }
+}
