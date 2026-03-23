@@ -31,6 +31,10 @@ from .spectrogram import (
 from .typings import AnalysisResult, PathLike
 from .utils import load_result, mkpath
 
+_AUDIO_SUFFIXES = {".wav", ".flac", ".mp3", ".m4a", ".aac", ".ogg"}
+_STEM_NAMES_4 = ("bass", "drums", "other", "vocals")
+_STEM_NAMES_6 = _STEM_NAMES_4 + ("guitar", "piano")
+
 
 def _ensure_mlx_env(device: str) -> None:
   if device != "mlx":
@@ -38,6 +42,118 @@ def _ensure_mlx_env(device: str) -> None:
   os.environ.setdefault("NATTEN_MLX", "1")
   os.environ.setdefault("NATTEN_MLX_BACKEND", "metal")
   os.environ.setdefault("NATTEN_MLX_COMPILE", "1")
+
+
+def _stem_name_from_path(path: Path) -> Optional[str]:
+  lower_name = path.name.lower()
+  stem = path.stem.lower()
+  for stem_name in _STEM_NAMES_6:
+    if stem == stem_name:
+      return stem_name
+    if f"({stem_name})" in lower_name or f"_{stem_name}." in lower_name:
+      return stem_name
+  return None
+
+
+def _candidate_stem_roots(stems_dir: Path, audio_path: Path) -> List[Path]:
+  roots = []
+  track_dir = stems_dir / audio_path.stem
+  if track_dir.is_dir():
+    roots.append(track_dir)
+  roots.append(stems_dir)
+  return roots
+
+
+def _find_external_stem_paths(stems_dir: PathLike, audio_path: PathLike) -> Dict[str, Path]:
+  stems_dir = mkpath(stems_dir)
+  audio_path = mkpath(audio_path)
+  prefix = audio_path.stem.lower()
+
+  matches: Dict[str, Path] = {}
+  for root in _candidate_stem_roots(stems_dir, audio_path):
+    if not root.is_dir():
+      continue
+    for path in sorted(root.iterdir()):
+      if not path.is_file() or path.suffix.lower() not in _AUDIO_SUFFIXES:
+        continue
+      stem_name = _stem_name_from_path(path)
+      if stem_name is None:
+        continue
+      is_canonical = path.stem.lower() == stem_name
+      if root == stems_dir and not is_canonical and not path.name.lower().startswith(prefix):
+        continue
+      matches.setdefault(stem_name, path)
+  return matches
+
+
+def _load_external_stem_audio(stem_paths: Dict[str, Path]) -> tuple[Dict[str, Any], int]:
+  try:
+    import mlx_audio_io
+
+    first_path = next(iter(stem_paths.values()))
+    native_sr = int(mlx_audio_io.info(str(first_path)).sample_rate)
+    stems = {}
+    for stem_name, path in stem_paths.items():
+      audio, _ = mlx_audio_io.load(str(path), sr=native_sr, mono=False)
+      stems[stem_name] = audio.squeeze()
+    return stems, native_sr
+  except ImportError:
+    import librosa
+
+    stems = {}
+    sample_rate: Optional[int] = None
+    for stem_name, path in stem_paths.items():
+      audio, stem_sr = librosa.load(str(path), sr=None, mono=False)
+      if sample_rate is None:
+        sample_rate = int(stem_sr)
+      elif int(stem_sr) != sample_rate:
+        raise ValueError(f"Stem sample-rate mismatch in {path}: expected {sample_rate}, got {stem_sr}")
+      stems[stem_name] = np.asarray(audio)
+
+    if sample_rate is None:
+      raise ValueError("No external stems were loaded.")
+    return stems, sample_rate
+
+
+def _sum_aligned_signals(signals: List[Any]) -> Any:
+  if not signals:
+    raise ValueError("Expected at least one signal to sum.")
+  result = signals[0]
+  for signal in signals[1:]:
+    size = min(int(result.shape[-1]), int(signal.shape[-1]))
+    result = result[..., :size] + signal[..., :size]
+  return result
+
+
+def _collapse_external_stems(stems: Dict[str, Any]) -> tuple[Dict[str, Any], str]:
+  if all(name in stems for name in _STEM_NAMES_6):
+    collapsed = {
+      "bass": stems["bass"],
+      "drums": stems["drums"],
+      "vocals": stems["vocals"],
+      "other": _sum_aligned_signals([stems["other"], stems["guitar"], stems["piano"]]),
+    }
+    return collapsed, "external_6_to_4"
+
+  if all(name in stems for name in _STEM_NAMES_4):
+    return {name: stems[name] for name in _STEM_NAMES_4}, "external_4_stem"
+
+  missing_4 = [name for name in _STEM_NAMES_4 if name not in stems]
+  missing_6 = [name for name in _STEM_NAMES_6 if name not in stems]
+  raise ValueError(
+    "External stems directory must contain either 4 stems "
+    f"{list(_STEM_NAMES_4)} or 6 stems {list(_STEM_NAMES_6)}. "
+    f"Missing-for-4={missing_4}, missing-for-6={missing_6}"
+  )
+
+
+def _prepare_external_stems(stems_dir: PathLike, audio_path: PathLike) -> tuple[Dict[str, Any], int, str]:
+  stem_paths = _find_external_stem_paths(stems_dir, audio_path)
+  if not stem_paths:
+    raise FileNotFoundError(f"No external stems found in {stems_dir} for {mkpath(audio_path).name}")
+  stems, sample_rate = _load_external_stem_audio(stem_paths)
+  collapsed, mode = _collapse_external_stems(stems)
+  return collapsed, sample_rate, mode
 
 
 def _run_mlx_inference(
@@ -246,6 +362,7 @@ def analyze(
   include_activations: bool = False,
   include_embeddings: bool = False,
   demix_dir: PathLike = './demix',
+  stems_dir: PathLike = None,
   spec_dir: PathLike = './spec',
   spec_backend: Optional[str] = None,
   keep_byproducts: bool = False,
@@ -305,6 +422,7 @@ def analyze(
   if not paths:
     raise ValueError('At least one path must be specified.')
   paths = [mkpath(p) for p in paths]
+  stems_dir = mkpath(stems_dir) if stems_dir is not None else None
   paths = expand_paths(paths)
   check_paths(paths)
   if mlx_compile is None:
@@ -453,13 +571,14 @@ def analyze(
       model_loader_thread = threading.Thread(target=load_model_background, daemon=True)
       model_loader_thread.start()
 
+    use_external_stems = stems_dir is not None
     use_mlx_in_memory = (
       mlx_in_memory and
       device == "mlx" and
       spec_backend in ("mlx", "mlx_fast")
     )
 
-    if process_paths and not use_mlx_in_memory:
+    if process_paths and not use_mlx_in_memory and not use_external_stems:
       t0 = time.perf_counter()
       demix_paths = demix(process_paths, demix_dir_actual, overwrite=overwrite_demix)
       t1 = time.perf_counter()
@@ -482,19 +601,26 @@ def analyze(
       spec_map = {demix_path.name: spec_path for demix_path, spec_path in zip(demix_paths, spec_paths)}
 
     if todo_paths:
-      if use_mlx_in_memory:
+      if use_mlx_in_memory or use_external_stems:
         try:
-          from demucs_mlx.api import save_audio
+          if not use_external_stems:
+            from demucs_mlx.api import save_audio
+          else:
+            save_audio = None
         except Exception as exc:
           raise ImportError(
             "demucs-mlx is not available. Install it with `uv pip install demucs-mlx`."
           ) from exc
-        t_init0 = time.perf_counter()
-        from demucs_mlx.api import Separator
-        separator = Separator(model="htdemucs", progress=False)
-        t_init1 = time.perf_counter()
-        _emit_timing("demix_init: demucs-mlx", None, t_init0, t_init1)
-        if keep_byproducts:
+
+        separator = None
+        if not use_external_stems:
+          t_init0 = time.perf_counter()
+          from demucs_mlx.api import Separator
+          separator = Separator(model="htdemucs", progress=False)
+          t_init1 = time.perf_counter()
+          _emit_timing("demix_init: demucs-mlx", None, t_init0, t_init1)
+
+        if keep_byproducts and not use_external_stems:
           write_queue = queue.Queue()
 
           def _writer():
@@ -518,15 +644,22 @@ def analyze(
         for path in pbar:
           pbar.set_description(f'Analyzing {path.name}')
 
-          t0 = time.perf_counter()
-          _, stems = separator.separate_audio_file(path, return_mx=True)
-          t1 = time.perf_counter()
-          _emit_timing(demix_stage, path, t0, t1)
+          if use_external_stems:
+            t0 = time.perf_counter()
+            stems, stem_sr, stem_mode = _prepare_external_stems(stems_dir, path)
+            t1 = time.perf_counter()
+            _emit_timing("stems_load", path, t0, t1, {"mode": stem_mode})
+          else:
+            t0 = time.perf_counter()
+            _, stems = separator.separate_audio_file(path, return_mx=True)
+            t1 = time.perf_counter()
+            _emit_timing(demix_stage, path, t0, t1)
+            stem_sr = separator.samplerate
 
           t2 = time.perf_counter()
           spec = spectrogram_from_stems(
             stems,
-            sample_rate=separator.samplerate,
+            sample_rate=stem_sr,
             backend=spec_backend,
             check=spec_check,
             return_mx=True,
@@ -550,7 +683,11 @@ def analyze(
             spec_path = spec_dir_actual / f'{path.stem}.npy'
             spec_np = np.array(spec, copy=False)
             stems_np = {stem: np.array(audio, copy=False) for stem, audio in stems.items()}
-            write_queue.put((stems_np, out_dir, separator.samplerate, spec_np, spec_path))
+            write_queue.put((stems_np, out_dir, stem_sr, spec_np, spec_path))
+          elif keep_byproducts and use_external_stems:
+            spec_path = spec_dir_actual / f'{path.stem}.npy'
+            spec_path.parent.mkdir(parents=True, exist_ok=True)
+            np.save(str(spec_path), np.array(spec, copy=False))
 
           timings = {}
           result = run_inference_mlx_spec(

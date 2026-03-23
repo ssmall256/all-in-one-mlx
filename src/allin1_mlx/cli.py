@@ -56,6 +56,8 @@ def make_parser():
                       help='Keep demixed audio files and spectrograms (default: False)')
   parser.add_argument('--demix-dir', type=Path, default=cwd / 'demix',
                       help='Path to a directory to store demixed tracks (default: ./demix)')
+  parser.add_argument('--stems-dir', type=Path, default=None,
+                      help='Use external stems from this directory instead of running demucs. Accepts 4 stems (bass/drums/other/vocals) or 6 stems (plus guitar/piano), including BS-Roformer-style filenames.')
   parser.add_argument('--spec-dir', type=Path, default=cwd / 'spec',
                       help='Path to a directory to store spectrograms (default: ./spec)')
   parser.add_argument('--spec-backend', type=str, choices=['mlx', 'mlx_fast'], default=None,
@@ -135,6 +137,7 @@ def main():
     include_activations=args.activ,
     include_embeddings=args.embed,
     demix_dir=args.demix_dir,
+    stems_dir=args.stems_dir,
     spec_dir=args.spec_dir,
     spec_backend=args.spec_backend,
     keep_byproducts=args.keep_byproducts,
