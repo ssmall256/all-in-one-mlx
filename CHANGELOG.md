@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-08-12
+
+### Added
+
+- Optional `mlx-weights` integration with verified, on-demand checkpoint downloads when the integration is unavailable.
+- External four- and six-stem inputs for bypassing source separation.
+- `--array-dir` for storing activation and embedding arrays separately from JSON results.
+- `--demix-seed` for reproducible Demucs time-shift selection.
+
+### Changed
+
+- Removed the mandatory `mlx-weights` dependency and added a standalone cache at `~/.cache/all-in-one-mlx/weights`.
+- Reduced MLX batch inference materialization overhead.
+- Bumped `demucs-mlx` to `>=1.4.4` for seeded shift support.
+- Updated GitHub Actions workflows to current Node 24 action generations.
+
 ## [1.0.5] - 2026-03-06
 
 ### Changed
@@ -81,7 +97,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Training code and instructions.
 - madmom as a required dependency (optional for comparison only).
 
-[unreleased]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.5...HEAD
+[unreleased]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.6...HEAD
+[1.0.6]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.4...v1.0.5
 [1.0.3]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/ssmall256/all-in-one-mlx/compare/v1.0.1...v1.0.2
