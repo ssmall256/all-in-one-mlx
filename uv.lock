@@ -1147,14 +1147,20 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "gdown", marker = "extra == 'all'" },
+    { name = "gdown", marker = "extra == 'gdrive'" },
     { name = "huggingface-hub", marker = "extra == 'all'" },
     { name = "huggingface-hub", marker = "extra == 'hf'" },
     { name = "numpy" },
+    { name = "onnx", marker = "extra == 'all'" },
+    { name = "onnx", marker = "extra == 'convert'" },
+    { name = "packaging", marker = "extra == 'all'" },
+    { name = "packaging", marker = "extra == 'convert'" },
     { name = "safetensors" },
     { name = "torch", marker = "extra == 'all'" },
     { name = "torch", marker = "extra == 'convert'" },
 ]
-provides-extras = ["convert", "hf", "all"]
+provides-extras = ["convert", "hf", "gdrive", "all"]
 
 [[package]]
 name = "msgpack"
