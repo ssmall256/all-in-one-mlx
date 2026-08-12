@@ -172,6 +172,7 @@ def _run_mlx_inference(
   mlx_compile: bool,
   ensemble_parallel: bool,
   out_dir: Optional[Path],
+  array_dir: Optional[Path],
   _emit_timing,
   _emit_summary,
 ) -> List[AnalysisResult]:
@@ -251,7 +252,7 @@ def _run_mlx_inference(
 
       if out_dir is not None:
         t0 = time.perf_counter()
-        save_results(result, out_dir)
+        save_results(result, out_dir, array_dir=array_dir)
         t1 = time.perf_counter()
         _emit_timing("save", path, t0, t1)
 
@@ -305,7 +306,7 @@ def _run_mlx_inference(
           _emit_summary(path, timings)
         if out_dir is not None:
           t0 = time.perf_counter()
-          save_results(result, out_dir)
+          save_results(result, out_dir, array_dir=array_dir)
           t1 = time.perf_counter()
           _emit_timing("save", path, t0, t1)
         results.append(result)
@@ -386,6 +387,8 @@ def analyze(
   timings_summary_path: PathLike = None,
   timings_json_summary_path: PathLike = None,
   dbn_backend: Optional[str] = None,
+  *,
+  array_dir: PathLike = None,
 ) -> Union[AnalysisResult, List[AnalysisResult]]:
   """
   Analyzes the provided audio files and returns the analysis results.
@@ -423,6 +426,7 @@ def analyze(
     raise ValueError('At least one path must be specified.')
   paths = [mkpath(p) for p in paths]
   stems_dir = mkpath(stems_dir) if stems_dir is not None else None
+  array_dir = mkpath(array_dir) if array_dir is not None else None
   paths = expand_paths(paths)
   check_paths(paths)
   if mlx_compile is None:
@@ -541,6 +545,7 @@ def analyze(
           exist_path,
           load_activations=include_activations,
           load_embeddings=include_embeddings,
+          array_dir=array_dir,
         )
         for exist_path in tqdm(exist_paths, desc='Loading existing results')
       ]
@@ -723,7 +728,7 @@ def analyze(
 
           if out_dir is not None:
             t0 = time.perf_counter()
-            save_results(result, out_dir)
+            save_results(result, out_dir, array_dir=array_dir)
             t1 = time.perf_counter()
             _emit_timing("save", path, t0, t1)
 
@@ -746,6 +751,7 @@ def analyze(
           mlx_compile=mlx_compile,
           ensemble_parallel=ensemble_parallel,
           out_dir=out_dir,
+          array_dir=array_dir,
           _emit_timing=_emit_timing,
           _emit_summary=_emit_summary if timings_summary else None,
         )

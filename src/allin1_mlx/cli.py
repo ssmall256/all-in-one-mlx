@@ -10,6 +10,9 @@ def make_parser():
   parser.add_argument('paths', nargs='+', type=Path, default=[], help='Path to tracks')
   parser.add_argument('-o', '--out-dir', type=Path, default=cwd / './struct',
                       help='Path to a directory to store analysis results (default: ./struct)')
+  parser.add_argument('--array-dir', type=Path, default=None,
+                      help='Directory for activation and embedding arrays '
+                           '(default: alongside JSON results in --out-dir)')
   parser.add_argument('-v', '--visualize', action='store_true', default=False,
                       help='Save visualizations (default: False)')
   parser.add_argument('--viz-dir', type=str, default=cwd / 'viz',
@@ -130,6 +133,7 @@ def main():
   analyze(
     paths=args.paths,
     out_dir=args.out_dir,
+    array_dir=args.array_dir,
     visualize=args.viz_dir if args.visualize else False,
     sonify=args.sonif_dir if args.sonify else False,
     model=args.model,

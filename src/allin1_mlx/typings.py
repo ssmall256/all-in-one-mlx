@@ -42,6 +42,8 @@ class AnalysisResult:
     path: PathLike,
     load_activations: bool = True,
     load_embeddings: bool = True,
+    *,
+    array_dir: PathLike = None,
   ):
     from .utils import mkpath
 
@@ -58,14 +60,15 @@ class AnalysisResult:
       segments=[Segment(**seg) for seg in data['segments']],
     )
 
+    array_path = mkpath(array_dir) / path.name if array_dir is not None else path
     if load_activations:
-      activ_path = path.with_suffix('.activ.npz')
+      activ_path = array_path.with_suffix('.activ.npz')
       if activ_path.is_file():
         activs = np.load(activ_path)
         result.activations = {key: activs[key] for key in activs.files}
 
     if load_embeddings:
-      embed_path = path.with_suffix('.embed.npy')
+      embed_path = array_path.with_suffix('.embed.npy')
       if embed_path.is_file():
         result.embeddings = np.load(embed_path)
 

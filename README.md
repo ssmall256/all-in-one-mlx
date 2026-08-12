@@ -212,9 +212,17 @@ Optional outputs:
 |---|---|
 | Visualizations | `--visualize` and `--viz-dir` |
 | Sonifications | `--sonify` and `--sonif-dir` |
-| Frame-level activations | `--activ` |
-| Frame-level embeddings | `--embed` |
+| Frame-level activations | `--activ` and optionally `--array-dir` |
+| Frame-level embeddings | `--embed` and optionally `--array-dir` |
 | JSONL timings | `--timings-path` |
+
+Activation and embedding arrays are saved beside the JSON results by default.
+Use `--array-dir` to keep these much larger files in a separate directory:
+
+```bash
+allin1-mlx song.wav --activ --embed \
+  --out-dir ./struct --array-dir ./arrays
+```
 
 ## Model weights
 

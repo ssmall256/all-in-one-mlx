@@ -21,11 +21,14 @@ def load_result(
   path: PathLike,
   load_activations: bool = True,
   load_embeddings: bool = True,
+  *,
+  array_dir: PathLike = None,
 ) -> AnalysisResult:
   path = mkpath(path)
   result = AnalysisResult.from_json(
     path,
     load_activations=load_activations,
     load_embeddings=load_embeddings,
+    array_dir=array_dir,
   )
   return result
