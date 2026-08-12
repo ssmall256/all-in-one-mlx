@@ -7,8 +7,14 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/all-in-one-mlx
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -24,28 +30,6 @@ jobs:
           pip install build twine
           python -m build
           twine check dist/*
-
-      - name: Upload distributions
-        uses: actions/upload-artifact@v7
-        with:
-          name: python-dist
-          path: dist/
-
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/all-in-one-mlx
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Download distributions
-        uses: actions/download-artifact@v8
-        with:
-          name: python-dist
-          path: dist/
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
