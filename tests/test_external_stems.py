@@ -1,5 +1,4 @@
 import importlib
-from pathlib import Path
 
 import numpy as np
 
@@ -51,6 +50,7 @@ def test_analyze_uses_external_stems_and_skips_demix(monkeypatch, tmp_path):
   )
 
   monkeypatch.setattr(analyze_module, "demix", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("demix should not run")))
+  monkeypatch.setattr(analyze_module, "_create_separator", lambda **kwargs: (_ for _ in ()).throw(AssertionError("separator should not be created")))
   monkeypatch.setattr(analyze_module, "load_pretrained_model_mlx", lambda **kwargs: object())
   monkeypatch.setattr(
     analyze_module,
@@ -75,7 +75,12 @@ def test_analyze_uses_external_stems_and_skips_demix(monkeypatch, tmp_path):
   monkeypatch.setattr(analyze_module, "spectrogram_from_stems", fake_spectrogram_from_stems)
   monkeypatch.setattr(analyze_module, "run_inference_mlx_spec", lambda **kwargs: result)
 
-  resolved = analyze_module.analyze(audio_path, stems_dir=tmp_path, mlx_in_memory=False)
+  resolved = analyze_module.analyze(
+    audio_path,
+    stems_dir=tmp_path,
+    mlx_in_memory=False,
+    demix_seed=1234,
+  )
 
   assert resolved == result
   assert captured["sample_rate"] == 44100

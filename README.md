@@ -224,6 +224,20 @@ allin1-mlx song.wav --activ --embed \
   --out-dir ./struct --array-dir ./arrays
 ```
 
+## Demix reproducibility
+
+Demucs applies a random time shift before separation by default. Supply a seed
+to reproduce that shift selection across runs:
+
+```bash
+allin1-mlx song.wav --demix-seed 1234
+```
+
+The seed only applies when Demucs actually runs. External stems and reusable
+cached stems bypass it; use `--overwrite demix,spec,json` when replacing a
+disk-backed cached analysis with a seeded run. Seeding Demucs does not guarantee
+bitwise-stable end-to-end results because later MLX inference can still vary.
+
 ## Model weights
 
 | Item | Behavior |

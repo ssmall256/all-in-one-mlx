@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 import numpy as np
 from tqdm import tqdm
 
-from .demix import demix
+from .demix import _create_separator, demix
 from .helpers import (
   check_paths,
   expand_paths,
@@ -389,6 +389,7 @@ def analyze(
   dbn_backend: Optional[str] = None,
   *,
   array_dir: PathLike = None,
+  demix_seed: Optional[int] = None,
 ) -> Union[AnalysisResult, List[AnalysisResult]]:
   """
   Analyzes the provided audio files and returns the analysis results.
@@ -585,7 +586,12 @@ def analyze(
 
     if process_paths and not use_mlx_in_memory and not use_external_stems:
       t0 = time.perf_counter()
-      demix_paths = demix(process_paths, demix_dir_actual, overwrite=overwrite_demix)
+      demix_paths = demix(
+        process_paths,
+        demix_dir_actual,
+        overwrite=overwrite_demix,
+        seed=demix_seed,
+      )
       t1 = time.perf_counter()
       _emit_timing(demix_stage, None, t0, t1, {"count": len(process_paths)})
 
@@ -620,8 +626,7 @@ def analyze(
         separator = None
         if not use_external_stems:
           t_init0 = time.perf_counter()
-          from demucs_mlx.api import Separator
-          separator = Separator(model="htdemucs", progress=False)
+          separator = _create_separator(seed=demix_seed)
           t_init1 = time.perf_counter()
           _emit_timing("demix_init: demucs-mlx", None, t_init0, t_init1)
 

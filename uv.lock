@@ -43,7 +43,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "demucs-mlx", specifier = ">=1.4.3" },
+    { name = "demucs-mlx", specifier = ">=1.4.4" },
     { name = "huggingface-hub" },
     { name = "hydra-core" },
     { name = "librosa", specifier = ">=0.11.0" },
@@ -547,7 +547,7 @@ wheels = [
 
 [[package]]
 name = "demucs-mlx"
-version = "1.4.3"
+version = "1.4.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mlx" },
@@ -558,9 +558,9 @@ dependencies = [
     { name = "packaging" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/93/5bfc509bf14475e10f8d8eb4d7a513a02d09f4d21edcb068a6ec3f3653ae/demucs_mlx-1.4.3.tar.gz", hash = "sha256:6519f85dd7e53505c4c25cecc4947dd30856b9ab892d9a14b670f1069528f896", size = 59170, upload-time = "2026-03-06T17:08:33.465Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/74/f66399b78580b54b17a5b9e0ab13004df71449abf3770113d2af83f7ce1e/demucs_mlx-1.4.4.tar.gz", hash = "sha256:abf53b32b7fc9cecac1936793fbdd748633df237e4ff6153c275e4d8cc03b8f2", size = 61695, upload-time = "2026-06-14T01:43:22.397Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2d/e0/6cf4ed82d00f1ff320585ff31575911c707493a323f199067d07775c8c52/demucs_mlx-1.4.3-py3-none-any.whl", hash = "sha256:5f85c09feef7b835f6188b5408f908a711ebcd24a6384be87ef471b8493d072c", size = 63524, upload-time = "2026-03-06T17:08:32.328Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/8b/8e99e5105abee71555ca61f57d2ed583c3f28c94c36e416f1b88e5b9ba4d/demucs_mlx-1.4.4-py3-none-any.whl", hash = "sha256:dc40828b0a8591720082d2494696249790573d4ff6e5be72b16594e131b23e64", size = 64351, upload-time = "2026-06-14T01:43:21.23Z" },
 ]
 
 [[package]]
