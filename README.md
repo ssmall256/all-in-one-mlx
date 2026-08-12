@@ -242,16 +242,12 @@ bitwise-stable end-to-end results because later MLX inference can still vary.
 
 | Item | Behavior |
 |---|---|
-| Source | MLX checkpoints are resolved from the shared `mlx-weights` cache by default |
+| Source | The optional `mlx-weights` integration is preferred when installed; otherwise verified checkpoints are downloaded on demand |
 | Packaging | Release wheels/sdists do not bundle model weights |
-| Default lookup path | `~/.cache/mlx-weights/all-in-one-mlx` |
+| Standalone cache | `~/.cache/all-in-one-mlx/weights` |
 | Custom paths | Use `--mlx-weights-dir` or explicit `--mlx-weights-path` and `--mlx-config-path` |
 
-Pre-convert a fold explicitly with:
-
-```bash
-mlx-weights convert allin1/harmonix-fold0
-```
+Standalone downloads are pinned to an immutable source revision and checked against the published SHA-256 digest before use. Cached files are rechecked, and a damaged entry is discarded and downloaded again. Install `mlx-weights` separately if you want to use its shared conversion cache instead.
 
 ## Known limitations
 
@@ -269,7 +265,7 @@ python scripts/compare_beat_parity.py \
   --upstream-python /path/to/all-in-one/.venv/bin/python \
   --mps-python /path/to/all-in-one-mps/.venv/bin/python \
   --mlx-python /path/to/all-in-one-mlx/.venv/bin/python \
-  --mlx-weights-dir ~/.cache/mlx-weights/all-in-one-mlx \
+  --mlx-weights-dir ~/.cache/all-in-one-mlx/weights \
   --output /tmp/allin1_beat_parity.json
 ```
 
