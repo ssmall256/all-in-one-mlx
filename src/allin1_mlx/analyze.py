@@ -107,11 +107,11 @@ def _load_external_stem_audio(stem_paths: Dict[str, Path]) -> tuple[Dict[str, An
       if sample_rate is None:
         sample_rate = int(stem_sr)
       elif int(stem_sr) != sample_rate:
-        raise ValueError(f"Stem sample-rate mismatch in {path}: expected {sample_rate}, got {stem_sr}")
+        raise ValueError(f"Stem sample-rate mismatch in {path}: expected {sample_rate}, got {stem_sr}") from None
       stems[stem_name] = np.asarray(audio)
 
     if sample_rate is None:
-      raise ValueError("No external stems were loaded.")
+      raise ValueError("No external stems were loaded.") from None
     return stems, sample_rate
 
 
