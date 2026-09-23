@@ -106,10 +106,10 @@ The optimized DBN uses three backends in priority order:
 ### For Development
 
 ```bash
-cd /Users/sam/Code/all-in-two/src/allin1/postprocessing
+cd src/allin1_mlx/postprocessing
 
 # Build Cython extension
-/Users/sam/Code/all-in-two/.venv/bin/python -c "
+python -c "
 from Cython.Build import cythonize
 from setuptools import setup, Extension
 import numpy as np
@@ -219,7 +219,7 @@ Estimated potential: Additional 1.5-2x speedup possible
 
 ```bash
 cd /tmp
-/Users/sam/Code/all-in-two/.venv/bin/python test_optimized_dbn_in_allin2.py
+python test_optimized_dbn_in_allin2.py
 ```
 
 **Expected output**:
@@ -232,7 +232,7 @@ Speedup: 1.6-2x faster ✅
 
 ```bash
 cd /tmp
-/Users/sam/Code/all-in-two/.venv/bin/python test_allin2_e2e_performance.py
+python test_allin2_e2e_performance.py
 ```
 
 **Expected output**:

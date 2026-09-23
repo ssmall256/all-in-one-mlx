@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.11] - 2026-09-23
+
+### Fixed
+
+- Removed developer machine paths from the notes under `claude-reports/`, which
+  are public on GitHub (they are excluded from the sdist, so PyPI was never
+  affected).
+
 ## [1.0.10] - 2026-09-23
 
 ### Changed

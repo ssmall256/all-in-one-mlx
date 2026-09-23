@@ -213,7 +213,7 @@ Implement `local_maxima_mlx` using MLX operations:
 ### Test Command
 ```bash
 cd /tmp
-/Users/sam/Code/all-in-two/.venv/bin/python test_optimized_spectrograms.py
+python test_optimized_spectrograms.py
 ```
 
 ### Expected Output

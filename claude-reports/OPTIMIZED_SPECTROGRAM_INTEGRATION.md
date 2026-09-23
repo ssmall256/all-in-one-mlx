@@ -201,7 +201,7 @@ All backends tested for parity:
 
 ```bash
 cd /tmp
-/Users/sam/Code/all-in-two/.venv/bin/python test_spectrogram_backend_defaults.py
+python test_spectrogram_backend_defaults.py
 ```
 
 **Expected output**:
@@ -320,7 +320,7 @@ result = analyze(paths='audio.wav', spec_backend='auto')
 ### Run All Spectrogram Tests
 
 ```bash
-cd /Users/sam/Code/all-in-two
+cd .
 pytest tests/test_spectrogram_backends.py -v
 ```
 
@@ -334,7 +334,7 @@ test_spectrogram_mlx_parity PASSED
 
 ```bash
 cd /tmp
-/Users/sam/Code/all-in-two/.venv/bin/python test_spectrogram_backend_defaults.py
+python test_spectrogram_backend_defaults.py
 ```
 
 ---
