@@ -562,13 +562,25 @@ def analyze(
       def load_model_background():
         try:
           t_load_start = time.perf_counter()
-          model_container['model'] = load_pretrained_model_mlx(
+          loaded = load_pretrained_model_mlx(
             model_name=model,
             weights_dir=mlx_weights_dir,
             weights_path=mlx_weights_path,
             config_path=mlx_config_path,
             ensemble_parallel=ensemble_parallel,
           )
+          # Materialise the weights here, on the thread that created them.
+          # MLX binds an unevaluated array to the stream of the thread that
+          # built it, and this thread's stream is gone by the time the main
+          # thread evaluates a graph containing these weights -- which surfaces
+          # far away as "RuntimeError: There is no Stream(cpu, N) in current
+          # thread" from the forward pass. Evaluating here is also the point of
+          # loading in the background: otherwise the work just moves to the
+          # first inference call on the main thread.
+          import mlx.core as mx
+
+          mx.eval(loaded.parameters() if hasattr(loaded, "parameters") else loaded)
+          model_container['model'] = loaded
           t_load_end = time.perf_counter()
           model_container['load_time'] = (t_load_start, t_load_end)
         except Exception as e:

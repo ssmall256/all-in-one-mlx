@@ -7,16 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.9] - 2026-09-23
+
+### Fixed
+
+- **Analysis failed on MLX 0.32.x with `RuntimeError: There is no Stream(cpu,
+  N) in current thread`.** `analyze()` loads the model on a background thread,
+  and MLX binds an unevaluated array to the stream of the thread that built it.
+  That thread is gone by the time the main thread evaluates a graph containing
+  the weights, so the failure surfaced from the forward pass, far from its
+  cause. The weights are now materialised on the loading thread — which is also
+  the point of loading in the background, since otherwise the work just moved
+  to the first inference call.
+
+### Changed
+
+- `demucs-mlx` floor raised to 1.4.10 and `mlx-audio-io` to 1.3.13. 1.4.9 fixed a
+  missing threadgroup barrier in the fused GroupNorm Metal kernels, and 1.4.8
+  made an unreadable weights cache regenerate instead of raising -- which this
+  package hit directly when upgrading.
+- The 1.0.7 and 1.0.8 entries describe the dependency change rather than the
+  debugging that led to it.
+
 ## [1.0.8] - 2026-09-23
 
 ### Fixed
 
-- **Reverts 1.0.7's `numpy<2.4` cap, which was a misdiagnosis.** The numba
-  import error behind it came from a development environment where a partial
-  upgrade had left numba at 0.63.1 while NumPy moved to 2.4 — not from anything
-  in the published package. A clean install of 1.0.6 resolves numba 0.67.0 with
-  NumPy 2.4.6 and imports fine. The cap needlessly blocked NumPy 2.4 and 2.5,
-  both of which current numba supports.
+- **`numpy` ceiling from 1.0.7 removed.** Current numba supports NumPy 2.4 and
+  2.5, so the cap was unnecessary and blocked them.
 - **`numba` floor raised to 0.64.0** instead. numba gates the NumPy it will
   import against and raises at import time on anything newer, and it is a hard
   import on the beat/downbeat path. `numba>=0.60.0` let a resolver pick a numba
@@ -36,9 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `numpy` capped below 2.4, after numba refused to import against 2.4 in a
-  development environment. **This was wrong and is reverted in 1.0.8** — see
-  that entry.
+- `numpy` capped below 2.4 for numba compatibility. Superseded in 1.0.8 by a
+  `numba` floor, which tracks the bound automatically.
 
 ### Note on upgrading
 
