@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-09-23
+
+### Changed
+
+- Dependencies moved to the released MLX audio stack: `mlx>=0.31.2,<0.33`,
+  `demucs-mlx>=1.4.8,<1.5`, `mlx-audio-io>=1.3.12,<1.4`. The MLX floor matters —
+  0.31.0 and 0.31.1 mis-linearize the dispatch grid in their Metal strided
+  scatter-add kernel, which corrupts overlap-add accumulation, and the previous
+  floor of `>=0.31.0` allowed both.
+
+### Fixed
+
+- **`numpy` is now capped below 2.4.** numba refuses to import against NumPy 2.4
+  ("Numba needs NumPy 2.3 or less"), and it is a hard import on the
+  beat/downbeat path, so an unbounded `numpy>=1.26.0` broke two tests as soon as
+  NumPy 2.4 was available. The ceiling is load-bearing, not tidiness.
+
+### Note on upgrading
+
+demucs-mlx 1.4.6 hardened its weight cache, so any cache written before it is
+rejected. 1.4.8 regenerates automatically; that conversion needs the extras, so
+run `pip install 'demucs-mlx[convert]'` once if you see a conversion error on
+your first demix after upgrading.
+
 ## [1.0.6] - 2026-08-12
 
 ### Added
