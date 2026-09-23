@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.10] - 2026-09-23
+
+### Changed
+
+- Dependency floors raised to the current stack: `demucs-mlx>=1.4.11`,
+  `mlx-audio-io>=1.3.14`. `uv.lock` refreshed to match.
+
 ## [1.0.9] - 2026-09-23
 
 ### Fixed

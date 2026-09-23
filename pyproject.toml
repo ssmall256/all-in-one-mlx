@@ -31,8 +31,8 @@ dependencies = [
   "huggingface_hub",
   "matplotlib",
   "natten-mlx>=0.3.1",
-  "demucs-mlx>=1.4.10,<1.5",
-  "mlx-audio-io>=1.3.13,<1.4",
+  "demucs-mlx>=1.4.11,<1.5",
+  "mlx-audio-io>=1.3.14,<1.4",
   # numba gates the NumPy it will import against and raises at import time on
   # anything newer, so the floor here is what keeps that bound current: 0.60
   # tops out at NumPy 2.2, 0.64 at 2.5, 0.67 at 2.6. Constraining numba rather
