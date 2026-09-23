@@ -24,9 +24,7 @@ classifiers = [
 ]
 dependencies = [
   "mlx>=0.31.2,<0.33",
-  # numba refuses NumPy 2.4+ ("Numba needs NumPy 2.3 or less"), and it is a
-  # hard import for the beat/downbeat path, so the ceiling is load-bearing.
-  "numpy>=1.26.0,<2.4",
+  "numpy>=1.26.0",
   "librosa>=0.11.0",
   "hydra-core",
   "omegaconf",
@@ -35,7 +33,11 @@ dependencies = [
   "natten-mlx>=0.3.1",
   "demucs-mlx>=1.4.8,<1.5",
   "mlx-audio-io>=1.3.12,<1.4",
-  "numba>=0.60.0",
+  # numba gates the NumPy it will import against and raises at import time on
+  # anything newer, so the floor here is what keeps that bound current: 0.60
+  # tops out at NumPy 2.2, 0.64 at 2.5, 0.67 at 2.6. Constraining numba rather
+  # than capping numpy lets numba's own metadata do the work.
+  "numba>=0.64.0",
 ]
 
 [project.urls]

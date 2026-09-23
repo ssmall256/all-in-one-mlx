@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-09-23
+
+### Fixed
+
+- **Reverts 1.0.7's `numpy<2.4` cap, which was a misdiagnosis.** The numba
+  import error behind it came from a development environment where a partial
+  upgrade had left numba at 0.63.1 while NumPy moved to 2.4 — not from anything
+  in the published package. A clean install of 1.0.6 resolves numba 0.67.0 with
+  NumPy 2.4.6 and imports fine. The cap needlessly blocked NumPy 2.4 and 2.5,
+  both of which current numba supports.
+- **`numba` floor raised to 0.64.0** instead. numba gates the NumPy it will
+  import against and raises at import time on anything newer, and it is a hard
+  import on the beat/downbeat path. `numba>=0.60.0` let a resolver pick a numba
+  whose NumPy ceiling had already been passed. Constraining numba rather than
+  capping NumPy lets numba's own metadata keep the bound current: 0.60 tops out
+  at NumPy 2.2, 0.64 at 2.5, 0.67 at 2.6.
+
 ## [1.0.7] - 2026-09-23
 
 ### Changed
@@ -19,10 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **`numpy` is now capped below 2.4.** numba refuses to import against NumPy 2.4
-  ("Numba needs NumPy 2.3 or less"), and it is a hard import on the
-  beat/downbeat path, so an unbounded `numpy>=1.26.0` broke two tests as soon as
-  NumPy 2.4 was available. The ceiling is load-bearing, not tidiness.
+- `numpy` capped below 2.4, after numba refused to import against 2.4 in a
+  development environment. **This was wrong and is reverted in 1.0.8** — see
+  that entry.
 
 ### Note on upgrading
 
