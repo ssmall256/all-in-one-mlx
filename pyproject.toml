@@ -78,11 +78,9 @@ include = [
   "/tests",
 ]
 exclude = [
-  "/.claude",
   "/.python-version",
   "/assets",
   "/build",
-  "/claude-reports",
   "/demix",
   "/dist",
   "/mlx-weights",
