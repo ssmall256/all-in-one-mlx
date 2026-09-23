@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.13] - 2026-09-23
+
+### Removed
+
+- The `.gitignore` entries added in 1.0.12 named specific editor and assistant
+  tooling. They live in a global ignore file instead, so the repository does not
+  carry them.
+
 ## [1.0.12] - 2026-09-23
 
 ### Removed

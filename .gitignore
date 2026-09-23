@@ -233,11 +233,3 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,macos,linux
-# local tooling notes, never committed
-AGENTS.md
-CLAUDE.md
-.claude/
-.codex/
-.cursor/
-.aider*
-claude-reports/
