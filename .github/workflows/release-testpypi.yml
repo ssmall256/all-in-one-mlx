@@ -136,7 +136,19 @@ jobs:
             exit 1
           fi
           # Dependencies come from PyPI; mlx-audio-io is an sdist and compiles.
-          python -m pip install --no-cache-dir "${dists[0]}"
+          # The wait only proves this package has propagated; a freshly
+          # published dependency can still be missing from the mirror pip
+          # resolves against. A resolution failure costs nothing, so retry.
+          for attempt in {1..8}; do
+            if python -m pip install --no-cache-dir "${dists[0]}"; then
+              break
+            fi
+            if [ "${attempt}" -eq 8 ]; then
+              echo "Could not install ${dists[0]}" >&2
+              exit 1
+            fi
+            sleep 15
+          done
 
       - name: Smoke test
         run: |
